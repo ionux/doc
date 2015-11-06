@@ -10,10 +10,9 @@ The reallocation is dictated by something called bitcoin script.
 ===Bitcoin Script===
 
 Every time a coin is transferred, requirements for redemption are 
-expressed as Bitcoin Script. It's purpose is to: 
- 
-(i)  prevent anyone from stealing the coins
-(ii) allows the coin to be retrieved as terms dictate
+expressed as Bitcoin Script. It's purpose is to:
+ - prevent anyone from stealing the coins
+ - allows the coin to be retrieved as terms dictate
 
 
 ===Script===
@@ -27,7 +26,6 @@ When an opcode is run, it will consume values from the stack (or throw an error)
 Usually, they operate on consumed values and push new data back onto the stack.
 
 ===OPCODES===
-
 
 - OP_ADD / OP_SUB / OP_MUL / OP_DIV
 Consume two values from the stack, and push the single result
