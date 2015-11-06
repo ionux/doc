@@ -1,13 +1,13 @@
-### The Script Interpreter
+===The Script Interpreter===
 
-Gavin Andresen once pointed out there are no bitcoins, only transactions. 
+ Gavin Andresen once pointed out there are no bitcoins, only transactions.
 
 He's referring to the fact that all transfers of bitcoin are atomic. 
 An old, unspent coin is destroyed, and new outputs are created. 
 The reallocation is dictated by something called bitcoin script.
 
 
-### Bitcoin Script
+===Bitcoin Script===
 
 Every time a coin is transferred, requirements for redemption are 
 expressed as Bitcoin Script. It's purpose is to: 
@@ -16,7 +16,7 @@ expressed as Bitcoin Script. It's purpose is to:
 (ii) allows the coin to be retrieved as terms dictate
 
 
-### Script
+===Script===
 
 Script is a very simply byte-code language. It operates on a global stack. 
  
@@ -29,7 +29,8 @@ There are two types of opcodes:
 When an opcode is run, it will consume values from the stack (or throw an error)
 Usually, they operate on consumed values and push new data back onto the stack.  
 
-### OPCODES
+===OPCODES===
+
 
 - OP_ADD / OP_SUB / OP_MUL / OP_DIV
 Consume two values from the stack, and push the single result
@@ -49,7 +50,7 @@ Consume the first value of the stack, and push the resulting hash.
 - OP_IF / OP_ELSE / OP_ENDIF
 Flow control, based on values on the stack
   
-### Simple examples 1
+===Simple examples 1===
  1 1 OP_ADD  
 
 
