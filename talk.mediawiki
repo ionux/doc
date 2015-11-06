@@ -19,8 +19,9 @@ expressed as Bitcoin Script. It's purpose is to:
 ===Script===
 
 Script is a very simply byte-code language. Each script scope a stack. There are two types of opcodes:
- - those which push data to the stack
- - those which operate on the stack (eg, OP_ADD, OP_SUB, OP_XOR, OP_DUP, OP_EQUAL, OP_CHECKSIG)
+
+  - those which push data to the stack
+  - those which operate on the stack (eg, OP_ADD, OP_SUB, OP_XOR, OP_DUP, OP_EQUAL, OP_CHECKSIG)
     
 When an opcode is run, it will consume values from the stack (or throw an error).
 Usually, they operate on consumed values and push new data back onto the stack.
@@ -50,13 +51,13 @@ Flow control, based on values on the stack
 
 
 {|
-|  || 1 1 OP_ADD
+|  | 1 1 OP_ADD
 |-
-| 1 || 1 OP_ADD
+| 1 | 1 OP_ADD
 |-
-| 1 1 || OP_ADD
+| 1 1 | OP_ADD
 |-
-| 2 || 
+| 2 |
 |}
 
 ### Opcodes & Stack push's
