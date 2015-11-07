@@ -17,7 +17,7 @@ expressed as Bitcoin Script. It's purpose is to:
  Documentation of opcodes https://en.bitcoin.it/wiki/Script
  Source code for the interpreter: https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.cpp
 
-###### Script
+### Script
 
 Script is a simple stack based, byte-code language. There are three types of opcodes:
 
@@ -25,7 +25,7 @@ Script is a simple stack based, byte-code language. There are three types of opc
   * flow control
   * those which operate on the stack (arithmetic/cryptographic functions)
     
-When an opcode is run, it will consume values from the stack (or throw an error).
+
 Usually, they operate on consumed values and push new data back onto the stack.
 Each opcode carries out some sanity checking before proceeding, ie, checks required values are present on the stack.
 
@@ -114,7 +114,7 @@ Those arguments are: [sig] [public key]
  
 By setting the output script in this way, the funds are now locked to whomever can produce a signature 
 by the private key, wh'os public key is 0x03fc5e46fe3e4ac0cff896be960e4a651166c4ea5038ac3a15d9425557f293c93b.
-Because it's impossible to reverse a public key|*|, only the bearer of the private key can spend these coins. 
+Because it's impossible to reverse a public key[*], only the bearer of the private key can spend these coins. 
  
 When you lock coins using an output script, the bitcoin network expects that when spent, a script will be
 provided that satisfies the requirements of the output script, whatever they may be. 
@@ -166,7 +166,7 @@ Now run the output script:
 
 ### A word on compatibility
 
-So if anyone tried to produce with the wrong private key, we know the network will
+If anyone tried to produce a signature with the wrong private key, we know the network will
 verify it against the public key in the output anyway, meaning validation will fail. 
   
 This is the type of work a full node does. Full nodes verify all transaction on the network, 
@@ -177,7 +177,7 @@ affects the software's ability to sync with the network.
 
 In fact, reimplementing the parsing and interpretation of Bitcoin scripts is no simple task!
 
-At various points in history, bitcoins consensus has been exposed to external factors. 
+At various points in history, bitcoin's consensus code has depended on external libraries. 
 
 Satoshi used OpenSSL for ECDSA. This had unintended side effects, since if openssl suddenly decided
 certain encodings weren't valid, this might cause nodes to break. 
@@ -189,14 +189,12 @@ This has happened before, and had the potential to cause a schism hard fork in b
 
 We no longer use raw pay-to-pubkey, because public keys are harder to transfer. Instead we use addresses.
 
-Bitcoin addresses are simply hashes encoded in base58. They include a checksum for integrity. 
+Bitcoin addresses are simply hashes of the corresponding public key encoded in base58. They include a checksum for integrity.  
 
-On the bitcoin script level, how do we express this? 
-
-Instead of directly specifying a public key, we specify the hash. Our locking script will verify
+Instead of directly specifying a public key in our script, we specify the hash. Our locking script will verify
 that the redeeming party provides the correct public key first, before allowing expensive ECDSA validation. 
 
-As before, the input script will also provide the signature, making it look like this: <signature> <public key>
+As before, the input script will also provide the signature, making it look like this: [signature] [public key]
 
 Our new output script: OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
 
@@ -204,9 +202,9 @@ Our new output script: OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
    Run the input script:
 
    Stack            Exec      Remaining
-  |             |  |            |   | [sig] [p]            |
-  |             |  |[s]         |   | [p]                  | 
-  |[s]          |  |[p]         |   |                      | 
+  |             |  |            |   | [s] [p]            |
+  |             |  |[s]         |   | [p]                | 
+  |[s]          |  |[p]         |   |                    | 
   
     Now run the output script:  
   
@@ -223,7 +221,7 @@ Our new output script: OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
 
 Pure public keys are cumbersome to communicate, whereas addresses are roughly fixed size. 
 
-Two protection layers exist for the new form. Should ECDSA be broken, the hashing algorithm must also be broken. 
+Two protection layers exist when addresses are used. Should ECDSA be broken, two different hashing algorithms must also be broken to learn the private key. 
 
 ### What's next?
 
@@ -254,7 +252,7 @@ A 'bare' multisignature script looks like this:
     "outputs": [
       {
         "value": 1000000000,
-        "scriptPubKey": "OP_2 <pubkey1> <pubkey2> <pubkey3> OP_3 OP_CHECKMULTISIG"
+        "scriptPubKey": "OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG"
       }
     ]
 }
@@ -298,7 +296,7 @@ The virtues are:
  
 NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implicitly means P2SH by soft-fork. 
  
-######### The Output Script
+### The Output Script
 
 <pre>
  OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
@@ -308,7 +306,7 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
  
  The output script checks the requirement that the HASH160 of some data equals the specified hash.
  
-######### The Input Script
+### The Input Script
 
 <pre>
  OP_0 [sig1] [sig2] 
@@ -323,7 +321,7 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
   The only requirements for P2SH are that the script is provided. P2SH does not mandate multisignature scripts, it's
   just an example!
   
-######### Altogether:
+### Altogether:
 
  * First the input scripts are run (no change)
 
@@ -351,13 +349,15 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
  Stack: true
 </pre> 
 
-######### What else is possible?
+### What else is possible?
 
 The interpreter doesn't change much, but it's still under development. 
 
 New opcodes are being added by soft-fork, adding interesting functionality. 
 
-######### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
+These new opcodes are repurposed NOP opcodes. For compatibility, OP_DROP needs to be called because NOP's never changed the value on the stack.
+
+### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
 
 This allows bitcoins to be marked unspendable _until some point in the future_.
 
@@ -389,22 +389,21 @@ This allows bitcoins to be marked unspendable _until some point in the future_.
  * Lenny, and either Alice or Bob access only after 3 months (should a dispute prevent the contract from being resolved)
  * Depending on which case is desired, a boolean needs to be pushed at the end of the scriptSig, to trigger the IF / ELSE code.
   
-######### OP_CHECKSEQUENCEVERIFY
+### OP_CHECKSEQUENCEVERIFY
 
 This opcode is a _relative_ locktime, so the transaction is locked until a certain time has passed since
 it confirms in the blockchain.
 
 <pre>
    IF
-      2 <Alice's pubkey> <Bob's pubkey> <Escrow's pubkey> 3 CHECKMULTISIGVERIFY
+      2 [Alice's pubkey] [Bob's pubkey] [Escrow's pubkey] 3 CHECKMULTISIGVERIFY
    ELSE
       "30d" CHECKSEQUENCEVERIFY DROP
-      <Alice's pubkey> CHECKSIGVERIFY
+      [Alice's pubkey] CHECKSIGVERIFY
    ENDIF
 </pre>
 
 This is a 2-of-3 escrow, with an automatic refund to Alice should 30 days occur. Any other time, any two parties can sign to releasea the funds. 
 
 Packaging this into a pay-to-script-hash address, Alice can make a payment, automatically starting the refund countdown.
- 
-#########
+
