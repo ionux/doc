@@ -12,6 +12,11 @@ expressed as Bitcoin Script. It's purpose is to:
  - prevent anyone from stealing the coins
  - allows the coin to be retrieved as terms dictate
 
+# Supplemental
+ 
+ Documentation of opcodes https://en.bitcoin.it/wiki/Script
+ Source code for the interpreter: https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.cpp
+
 # Script
 
 Script is a simply, stack based, byte-code language. There are three types of opcodes:
@@ -42,14 +47,14 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
  On the byte level, the string is prefixed by it's length in bytes, allowing the parser to handle dynamic length strings. 
  In human readable representations this is implicitly happening all the time, but will be omitted mostly for clarity.
  
-  - If the length of the string is <= 75, simply prefix the string with it's length.
-  - If the length of the string is <= 255, the indicator is: "OP_PUSHDATA1 <length; uint8>"
-  - If the length of the string is <= 65535, the indicator is: "OP_PUSHDATA2 <length; uint16>"
-  - If the length of the string is <= 2^64-1, the indicator is: "OP_PUSHDATA4 <length; uint64>"
+ * If the length of the string is <= 75, simply prefix the string with it's length.
+ * If the length of the string is <= 255, the indicator is: "OP_PUSHDATA1 <length; uint8>"
+ * If the length of the string is <= 65535, the indicator is: "OP_PUSHDATA2 <length; uint16>"
+ * If the length of the string is <= 2^64-1, the indicator is: "OP_PUSHDATA4 <length; uint64>"
    
-  The last is forbidden by network relues at this time, it's just not useful right now!
+  The last is forbidden by network rules at this time, it's just not useful right now!
   
-  The trick here is to use the opcode that lets you encode the minimal amount of data, but can still contain your string.  
+  The trick here is to use the opcode that lets you encode the least amount of data, but can still fit your string.  
   
 # Simple examples 1
  1 1 OP_ADD 2 OP_EQUAL
@@ -60,14 +65,14 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
  case, the value will always be true. 
  
 <pre>
-   Stack            Exec      Remaining
-  [      ]  ||     [     ]  [ 1 1 OP_ADD 2 OP_EQUAL     ]
-  [      ]  ||     [ 1   ]  [ 1 OP_ADD 2 OP_EQUAL       ] _Push_ the number 1 onto the stack
-  [ 1    ]  ||     [ 1   ]  [ OP_ADD 2 OP_EQUAL         ] _Push_ the number 1 onto the stack
-  [ 1 1  ]  ||     [ ADD ]  [ 2 OP_EQUAL                ] _Pop_ the two numbers, add them, and _push_ the result
-  [ 2    ]  ||     [ 2   ]  [ OP_EQUAL                  ] _Push_ the number 2 onto the stack
-  [ 2 2  ]  ||     [EQUAL]  [                           ] _Pop_ two values, compare them, and _push_ a boolean for this comparison
-  [ true ]  ||     [     ]  [                           ]
+   Stack     Exec      Remaining
+  |      |  |     |  | 1 1 OP_ADD 2 OP_EQUAL     |
+  |      |  | 1   |  | 1 OP_ADD 2 OP_EQUAL       | _Push_ the number 1 onto the stack
+  | 1    |  | 1   |  | OP_ADD 2 OP_EQUAL         | _Push_ the number 1 onto the stack
+  | 1 1  |  | ADD |  | 2 OP_EQUAL                | _Pop_ the two numbers, add them, and _push_ the result
+  | 2    |  | 2   |  | OP_EQUAL                  | _Push_ the number 2 onto the stack
+  | 2 2  |  |EQUAL|  |                           | _Pop_ two values, compare them, and _push_ a boolean for this comparison
+  | true |  |     |  |                           |
 </pre>
 
 # And in the real world?
@@ -80,7 +85,7 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
  
  But in the beginning, there was only pay-to-public key. We'll look at this first. 
  
- Before we go into that, lets have a look at where Script lives in a transaction.
+ The following is a snippet of a pay-to-pubkey transaction. Only the outputs are shown.
  
 <pre>
 {
@@ -109,7 +114,7 @@ Those arguments are: <sig> <public key>
  
 By setting the output script in this way, the funds are now locked to whomever can produce a signature 
 by the private key, wh'os public key is 0x03fc5e46fe3e4ac0cff896be960e4a651166c4ea5038ac3a15d9425557f293c93b.
-Because it's impossible to reverse a public key[*], only the bearer of the private key can spend these coins. 
+Because it's impossible to reverse a public key|*|, only the bearer of the private key can spend these coins. 
  
 When you lock coins using an output script, the bitcoin network expects that when spent, a script will be
 provided that satisfies the requirements of the output script, whatever they may be. 
@@ -120,6 +125,7 @@ must be provided in the input script.
 
 # Spending our pay-to-pubkey transaction 
 Lets look at what a transaction that spends this output might look like:
+
 <pre>
 {
     "txid": "ea44e97271691990157559d0bdd9959e02790c34db6c006d779e82fa5aee708e",
@@ -133,9 +139,9 @@ Lets look at what a transaction that spends this output might look like:
         "nSequence": 0xffffffff
       }
     ],
-    
-    ...
-    
+    "outputs": [
+      ... 
+    ]
 }
 </pre>
 
@@ -144,17 +150,17 @@ Since input scripts are run before the output script, lets see how this might lo
 <pre>
 Run the input script:
 
-   Stack            Exec      Remaining
-  [               ]  ||     [        ]  [ <sig>                ]
-  [               ]  ||     [ <sig>  ]  [                      ] _Push_ the signature onto the stack
-  [<sig>          ]  ||     [        ]  [                      ] 
+   Stack              Exec        Remaining
+  |            |     |        |  | |sig|                |
+  |            |     | |sig|  |  |                      | _Push_ the signature onto the stack
+  | |sig|      |     |        |  |                      | 
   
 Now run the output script:  
   
-  [<sig>          ]  ||     [        ]  [ <pubkey> OP_CHECKSIG ] 
-  [<sig>          ]  ||     [<pubkey>]  [ OP_CHECKSIG          ] _Push_ the public key onto the stack
-  [<sig> <pubkey> ]  ||     [CHECKSIG]  [                      ] _Pop_ two values, and perform ECDSA. Push a boolean with the result.
-  [ true          ]  ||     [        ]  [                      ]
+  | |sig|      |     |        |  | |pub| OP_CHECKSIG    | 
+  | |sig|      |     ||pub|   |  | OP_CHECKSIG          | _Push_ the public key onto the stack
+  | |sig| |pub||     |CHECKSIG|  |                      | _Pop_ two values, and perform ECDSA. Push a boolean with the result.
+  | true       |     |        |  |                      |
   
 </pre>
 
@@ -190,32 +196,33 @@ On the bitcoin script level, how do we express this?
 Instead of directly specifying a public key, we specify the hash. Our locking script will verify
 that the redeeming party provides the correct public key first, before allowing expensive ECDSA validation. 
 
-As before, the input script will also provide the signature, making it look like this: 
- > <signature> <public key>
+As before, the input script will also provide the signature, making it look like this: <signature> <public key>
 
-Our new output script:
- > OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
- 
-Run the input script:
+Our new output script: OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
+
+<pre>
+   Run the input script:
 
    Stack            Exec      Remaining
-  [             ]  ||     [           ]   [ <sig> <pub>          ]
-  [             ]  ||     [<s>        ]   [ <p>                  ] _Push_ the signature onto the stack
-  [<s>          ]  ||     [<p>        ]   [                      ] 
+  |             |  |            |   | [sig] [p]            |
+  |             |  |[s]         |   | [p]                  | 
+  |[s]          |  |[p]         |   |                      | 
   
-Now run the output script:  
+    Now run the output script:  
   
-  [<s><p>       ]  ||     [            ]   [ OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG ] 
-  [<s><p>       ]  ||     [ DUP        ]   [ OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG        ] _Push_ the public key onto the stack
-  [<s><p><p>    ]  ||     [ HASH160    ]   [[hash] OP_EQUALVERIFY OP_CHECKSIG                    ] _Pop_ two values, and perform ECDSA. Push a boolean with the result.
-  [<s><p><h1>   ]  ||     [ <hash>     ]   [ OP_EQUALVERIFY OP_CHECKSIG                          ]
-  [<s><p><h1><h>]  ||     [ EQUALVERIFY]   [ OP_CHECKSIG                                         ]
-  [<s><p>       ]  ||     [ CHECKSIG   ]   [                                                     ]
-  [ true        ]  ||     [            ]   [                                                     ]
-  
+  |[s][p]       |  |            |   | OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG | 
+  |[s][p]       |  | DUP        |   | OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG        | 
+  |[s][p][p]    |  | HASH160    |   | [hash] OP_EQUALVERIFY OP_CHECKSIG                   | 
+  |[s][p][h1]   |  | [hash]     |   | OP_EQUALVERIFY OP_CHECKSIG                          |
+  |[s][p][h1][h]|  | EQUALVERIFY|   | OP_CHECKSIG                                         |
+  |[s][p]       |  | CHECKSIG   |   |                                                     |
+  | true        |  |            |   |                                                     |
+</pre>  
+
 # Why did we change?
 
 Pure public keys are cumbersome to communicate, whereas addresses are roughly fixed size. 
+
 Two protection layers exist for the new form. Should ECDSA be broken, the hashing algorithm must also be broken. 
 
 # What's next?
@@ -225,11 +232,12 @@ The bitcoin script language is full of opportunities for interesting contracts.
 One of the first interesting contract was multi-signature accounts, made possible by OP_CHECKMULTISIG. 
 
 This opcode requires at least 3 parameters:
- - the number of required signatures (must be less than the total number of keys)
- - a list of public keys
- - the number of public keys
- - a list of signatures
- - a null byte - ie, OP_0 - due to a bug. 
+
+ * the number of required signatures (must be less than the total number of keys)
+ * a list of public keys
+ * the number of public keys
+ * a list of signatures
+ * a null byte - ie, OP_0 - due to a bug. 
  
  OP_CHECKMULTISIG allows up to 16 public keys.
  
@@ -253,6 +261,7 @@ A 'bare' multisignature script looks like this:
 </pre>
 
 A transaction redeeming one of these outputs might look like: 
+
 <pre>
 {
     "txid": "ea44e97271691990157559d0bdd9959e02790c34db6c006d779e82fa5aee708e",
@@ -262,13 +271,11 @@ A transaction redeeming one of these outputs might look like:
       {
         "hashPrevOut": "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16",
         "nPrevOut": 0,
-        "scriptSig": "OP_0 <sig1> <sig2>"
+        "scriptSig": "OP_0 [sig1] [sig2]"
         "nSequence": 0xffffffff
       }
-    ],
-    
-    ...
-    
+    ]
+    ...outputs trimmed...
 }
 </pre>
 
@@ -281,28 +288,33 @@ Pay to script hash is a development that has lead to a greater proliferation in 
 
 The issue was essentially: it's hard to ask someone to pay toa multi-signature script if the script is really long.
  
-Instead of asking the funding party to pay to the multisignature script, they can instead use _pay-to-script-hash_. 
-This allows for the hashes of scripts to be embedded in an address, for the same benefits as not exchanging raw public keys. 
+Instead of asking the funding party to pay to the multi-signature script, they can instead use _pay-to-script-hash_. This allows for the hashes of scripts to be embedded in an address, for the same benefits as not exchanging raw public keys. 
 
 The virtues are: 
- - the funding party doesn't have to pay the fee for the large output script
- - the funding party doesn't have to know the details of the script
- - pay to script-hash masks some of the complexities of bitcoin scripts. 
- - only the redeeming party needs to know about the script, meaning there is some privacy (only the hash is revealed)
+ * the funding party doesn't have to pay the fee for the large output script
+ * the funding party doesn't have to know the details of the script
+ * pay to script-hash masks some of the complexities of bitcoin scripts. 
+ * only the redeeming party needs to know about the script, meaning there is some privacy (only the hash is revealed)
  
 NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implicitly means P2SH by soft-fork. 
  
 ### The Output Script
- > OP_2 <pubkey1> <pubkey2> <pubkey3> OP_3 OP_CHECKMULTISIG
+
+<pre>
+ OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
    becomes
- > OP_HASH160 <hash> OP_EQUAL
+ OP_HASH160 [hash] OP_EQUAL
+</pre>
  
  The output script checks the requirement that the HASH160 of some data equals the specified hash.
  
 ### The Input Script
- > OP_0 <sig1> <sig2> 
+
+<pre>
+ OP_0 [sig1] [sig2] 
    becomes
- > OP_0 <sig1> <sig2> <serialized script>
+ OP_0 [sig1] [sig2] [serialized script]
+</pre>
   
   The input script needs to provide the same information as before (the signatures, and the dummy byte) but it 
   also needs to provide the raw script containing our public keys. This is similar to specifying the public key 
@@ -313,20 +325,31 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
   
 ### Altogether:
 
- > First the input scripts are run (no change)
- OP_0 <sig1> <sig2> <serialized script>
+ * First the input scripts are run (no change)
+
+<pre>
+ Run: OP_0 [sig1] [sig2] [serialized script]
  Stack: [00] [sig1] [sig2] [serialized script]
+</pre>
  
- > Now the output script (no change)
- OP_HASH160 <hash> OP_EQUAL
- [00] [sig1] [sig2] 
+ * Now the output script (no change)
+
+<pre>
+ Run: OP_HASH160 [hash] OP_EQUAL
+ Stack: [00] [sig1] [sig2] 
+</pre>
  
- > If still executing, rerun the input scripts in a clean stack:
- Stack: [00] [sig1] [sig2] [serialized script]
+ * If still executing, rerun the input scripts in a clean stack:
+
+<pre>
+ Stack: [00] [sig1] [sig2]
+</pre>
  
- > Before finally running the serialized script:
+ * Before finally running the serialized script:
+
+<pre>
  Stack: true
- 
+</pre> 
 
 ### What else is possible?
 
@@ -334,33 +357,54 @@ The interpreter doesn't change much, but it's still under development.
 
 New opcodes are being added by soft-fork, adding interesting functionality. 
 
-### OP_CHECKLOCKTIMEVERIFY
+### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
 
 This allows bitcoins to be marked unspendable _until some point in the future_.
 
- > 'OP_HODL'
- 
  A pseudo example:
+
 <pre>
-   IF <now + 3 months> CHECKLOCKTIMEVERIFY
+   IF [now + 3 months] CHECKLOCKTIMEVERIFY
       do something
    ELSE
       do something else
 </pre>
       
- Previously, it was not possible to provably lock funds into a contract, meaning collusion against a party is possible. 
+ Previously, it was not possible to provably lock funds into a contract, meaning collusion against a party is possible.
+  
 <pre>
   IF
-      <now + 3 months> CHECKLOCKTIMEVERIFY DROP
-      <Lenny's pubkey> CHECKSIGVERIFY
+      [now + 3 months] CHECKLOCKTIMEVERIFY DROP
+      [Lenny's pubkey] CHECKSIGVERIFY
       1
   ELSE
       2
   ENDIF
-  <Alice's pubkey> <Bob's pubkey> 2 CHECKMULTISIG
+  [Alice's pubkey] [Bob's pubkey] 2 CHECKMULTISIG
 </pre>
 
  This is an escrow contract between Alice and Bob, with Lenny as arbitrator:
-  (i) Alice and Bob can release the coins at any time
-  (ii) Lenny, and either Alice or Bob access only after 3 months (should a dispute prevent the contract from being resolved)
+ 
+ * Alice and Bob can release the coins at any time
+ * Lenny, and either Alice or Bob access only after 3 months (should a dispute prevent the contract from being resolved)
+ * Depending on which case is desired, a boolean needs to be pushed at the end of the scriptSig, to trigger the IF / ELSE code.
   
+### OP_CHECKSEQUENCEVERIFY
+
+This opcode is a _relative_ locktime, so the transaction is locked until a certain time has passed since
+it confirms in the blockchain.
+
+<pre>
+   IF
+      2 <Alice's pubkey> <Bob's pubkey> <Escrow's pubkey> 3 CHECKMULTISIGVERIFY
+   ELSE
+      "30d" CHECKSEQUENCEVERIFY DROP
+      <Alice's pubkey> CHECKSIGVERIFY
+   ENDIF
+</pre>
+
+This is a 2-of-3 escrow, with an automatic refund to Alice should 30 days occur. Any other time, any two parties can sign to releasea the funds. 
+
+Packaging this into a pay-to-script-hash address, Alice can make a payment, automatically starting the refund countdown.
+ 
+###
