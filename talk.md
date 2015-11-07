@@ -1,4 +1,4 @@
-# The Script Interpreter
+ The Script Interpreter
 
 Gavin Andresen once pointed out there are no bitcoins, only transactions.
 
@@ -12,12 +12,12 @@ expressed as Bitcoin Script. It's purpose is to:
  - prevent anyone from stealing the coins
  - allows the coin to be retrieved as terms dictate
 
-# Supplemental
+### Supplemental
  
  Documentation of opcodes https://en.bitcoin.it/wiki/Script
  Source code for the interpreter: https://github.com/bitcoin/bitcoin/blob/master/src/script/interpreter.cpp
 
-# Script
+###### Script
 
 Script is a simple stack based, byte-code language. There are three types of opcodes:
 
@@ -31,7 +31,7 @@ Each opcode carries out some sanity checking before proceeding, ie, checks requi
 
 All bitcoin scripts are pure, in that they are self contained, and cannot talk to the outside world. 
 
-# Some Op Codes
+### Some Op Codes
    - OP_ADD / OP_SUB / OP_MUL / OP_DIV - Consume two values from the stack, and push the single result
    - OP_DUP - Duplicates the value at the top of the stack
    - OP_EQUAL - Compare the first two values on the stack, pushing a boolean indicating the result.
@@ -41,7 +41,7 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
    - OP_CHECKSIG / OP_CHECKMULTISIG - Verify one or several ECDSA signature
    - OP_CHECKLOCKTIMEVERIFY / OP_CHECKSEQUENCEVERIFY (locktime, relative locktime) 
 
-# Pushing data? 
+### Pushing data? 
 
  There are some simple rules for encoding data to be pushed. 
  On the byte level, the string is prefixed by it's length in bytes, allowing the parser to handle dynamic length strings. 
@@ -56,7 +56,7 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
   
   The trick here is to use the opcode that lets you encode the least amount of data, but can still fit your string.  
   
-# Simple examples 1
+### Simple examples 1
  1 1 OP_ADD 2 OP_EQUAL
   
  The above is a simple script to check that 1 + 1 is indeed 2.
@@ -75,7 +75,7 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
   | true |  |     |  |                           |
 </pre>
 
-# And in the real world?
+### And in the real world?
 
  Bitcoin uses the cryptographic functionality in Script. 
  
@@ -104,7 +104,7 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
 }
 </pre>
  
-# Our first transaction
+### Our first transaction
 
 Lets pretend that the above transaction belongs to us. If you look at the output, there is only one argument before OP_CHECKSIG. This is our public key. 
 
@@ -123,7 +123,7 @@ Whenever a transaction is being verified, the input script is run through the in
 output script_. Since the output script checks that it's requirements are being met, any necessary parameters
 must be provided in the input script. 
 
-# Spending our pay-to-pubkey transaction 
+### Spending our pay-to-pubkey transaction 
 Lets look at what a transaction that spends this output might look like:
 
 <pre>
@@ -164,7 +164,7 @@ Now run the output script:
   
 </pre>
 
-# A word on compatibility
+### A word on compatibility
 
 So if anyone tried to produce with the wrong private key, we know the network will
 verify it against the public key in the output anyway, meaning validation will fail. 
@@ -185,7 +185,7 @@ certain encodings weren't valid, this might cause nodes to break.
 This has happened before, and had the potential to cause a schism hard fork in bitcoin if someone
  happened to use one of these uncommon encodings. 
  
-# Authentication today
+### Authentication today
 
 We no longer use raw pay-to-pubkey, because public keys are harder to transfer. Instead we use addresses.
 
@@ -219,13 +219,13 @@ Our new output script: OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
   | true        |  |            |   |                                                     |
 </pre>  
 
-# Why did we change?
+### Why did we change?
 
 Pure public keys are cumbersome to communicate, whereas addresses are roughly fixed size. 
 
 Two protection layers exist for the new form. Should ECDSA be broken, the hashing algorithm must also be broken. 
 
-# What's next?
+### What's next?
 
 The bitcoin script language is full of opportunities for interesting contracts. 
 
@@ -282,7 +282,7 @@ A transaction redeeming one of these outputs might look like:
 This contract allows _any_ 2 of the _3_ participants to produce signatures for a transaction,
 without the participation of the third party. This is analogous to escrow, and has been implemented as such. 
 
-# Pay to script hash
+### Pay to script hash
 
 Pay to script hash is a development that has lead to a greater proliferation in complex bitcoin scripts. 
 
@@ -298,7 +298,7 @@ The virtues are:
  
 NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implicitly means P2SH by soft-fork. 
  
-### The Output Script
+######### The Output Script
 
 <pre>
  OP_2 [pubkey1] [pubkey2] [pubkey3] OP_3 OP_CHECKMULTISIG
@@ -308,7 +308,7 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
  
  The output script checks the requirement that the HASH160 of some data equals the specified hash.
  
-### The Input Script
+######### The Input Script
 
 <pre>
  OP_0 [sig1] [sig2] 
@@ -323,7 +323,7 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
   The only requirements for P2SH are that the script is provided. P2SH does not mandate multisignature scripts, it's
   just an example!
   
-### Altogether:
+######### Altogether:
 
  * First the input scripts are run (no change)
 
@@ -351,13 +351,13 @@ NB: Pay-to-script-hash is a soft-fork feature. OP_HASH160 [hash] OP_EQUAL implic
  Stack: true
 </pre> 
 
-### What else is possible?
+######### What else is possible?
 
 The interpreter doesn't change much, but it's still under development. 
 
 New opcodes are being added by soft-fork, adding interesting functionality. 
 
-### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
+######### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
 
 This allows bitcoins to be marked unspendable _until some point in the future_.
 
@@ -389,7 +389,7 @@ This allows bitcoins to be marked unspendable _until some point in the future_.
  * Lenny, and either Alice or Bob access only after 3 months (should a dispute prevent the contract from being resolved)
  * Depending on which case is desired, a boolean needs to be pushed at the end of the scriptSig, to trigger the IF / ELSE code.
   
-### OP_CHECKSEQUENCEVERIFY
+######### OP_CHECKSEQUENCEVERIFY
 
 This opcode is a _relative_ locktime, so the transaction is locked until a certain time has passed since
 it confirms in the blockchain.
@@ -407,4 +407,4 @@ This is a 2-of-3 escrow, with an automatic refund to Alice should 30 days occur.
 
 Packaging this into a pay-to-script-hash address, Alice can make a payment, automatically starting the refund countdown.
  
-###
+#########
