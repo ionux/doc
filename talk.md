@@ -19,7 +19,7 @@ expressed as Bitcoin Script. It's purpose is to:
 
 # Script
 
-Script is a simple, stack based, byte-code language. There are three types of opcodes:
+Script is a simple stack based, byte-code language. There are three types of opcodes:
 
   * those which push data to the stack
   * flow control
