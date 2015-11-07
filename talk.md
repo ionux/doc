@@ -48,9 +48,9 @@ All bitcoin scripts are pure, in that they are self contained, and cannot talk t
  In human readable representations this is implicitly happening all the time, but will be omitted mostly for clarity.
  
  * If the length of the string is <= 75, simply prefix the string with it's length.
- * If the length of the string is <= 255, the indicator is: "OP_PUSHDATA1 <length; uint8>"
- * If the length of the string is <= 65535, the indicator is: "OP_PUSHDATA2 <length; uint16>"
- * If the length of the string is <= 2^64-1, the indicator is: "OP_PUSHDATA4 <length; uint64>"
+ * If the length of the string is <= 255, the indicator is: "OP_PUSHDATA1 [length; uint8]"
+ * If the length of the string is <= 65535, the indicator is: "OP_PUSHDATA2 [length; uint16]"
+ * If the length of the string is <= 2^64-1, the indicator is: "OP_PUSHDATA4 [length; uint64]"
    
   The last is forbidden by network rules at this time, it's just not useful right now!
   
@@ -110,7 +110,7 @@ Lets pretend that the above transaction belongs to us. If you look at the output
 
 OP_CHECKSIG is an opcode that takes two values from the stack, and attempts to validate them using ECDSA. 
 
-Those arguments are: <sig> <public key>
+Those arguments are: [sig] [public key]
  
 By setting the output script in this way, the funds are now locked to whomever can produce a signature 
 by the private key, wh'os public key is 0x03fc5e46fe3e4ac0cff896be960e4a651166c4ea5038ac3a15d9425557f293c93b.
