@@ -25,7 +25,6 @@ Script is a simple stack based, byte-code language. There are three types of opc
   * flow control
   * those which operate on the stack (arithmetic/cryptographic functions)
     
-
 Usually, they operate on consumed values and push new data back onto the stack.
 Each opcode carries out some sanity checking before proceeding, ie, checks required values are present on the stack.
 
@@ -151,15 +150,15 @@ Since input scripts are run before the output script, lets see how this might lo
 Run the input script:
 
    Stack              Exec        Remaining
-  |            |     |        |  | |sig|                |
-  |            |     | |sig|  |  |                      | _Push_ the signature onto the stack
-  | |sig|      |     |        |  |                      | 
+  |            |     |        |  | [sig]                |
+  |            |     | [sig]  |  |                      | _Push_ the signature onto the stack
+  | [sig]      |     |        |  |                      | 
   
 Now run the output script:  
   
-  | |sig|      |     |        |  | |pub| OP_CHECKSIG    | 
-  | |sig|      |     ||pub|   |  | OP_CHECKSIG          | _Push_ the public key onto the stack
-  | |sig| |pub||     |CHECKSIG|  |                      | _Pop_ two values, and perform ECDSA. Push a boolean with the result.
+  | [sig]      |     |        |  | [pub] OP_CHECKSIG    | 
+  | [sig]      |     |[pub]   |  | OP_CHECKSIG          | _Push_ the public key onto the stack
+  | [sig] [pub]|     |CHECKSIG|  |                      | _Pop_ two values, and perform ECDSA. Push a boolean with the result.
   | true       |     |        |  |                      |
   
 </pre>
@@ -239,7 +238,7 @@ This opcode requires at least 3 parameters:
  
  OP_CHECKMULTISIG allows up to 16 public keys.
  
-A 'bare' multisignature script looks like this:
+A 'bare' multi-signature script looks like this:
 
 <pre>
 {
@@ -284,7 +283,7 @@ without the participation of the third party. This is analogous to escrow, and h
 
 Pay to script hash is a development that has lead to a greater proliferation in complex bitcoin scripts. 
 
-The issue was essentially: it's hard to ask someone to pay toa multi-signature script if the script is really long.
+The issue was essentially: it's hard to ask someone to pay to a multi-signature script if the script is really long.
  
 Instead of asking the funding party to pay to the multi-signature script, they can instead use _pay-to-script-hash_. This allows for the hashes of scripts to be embedded in an address, for the same benefits as not exchanging raw public keys. 
 
@@ -357,7 +356,7 @@ New opcodes are being added by soft-fork, adding interesting functionality.
 
 These new opcodes are repurposed NOP opcodes. For compatibility, OP_DROP needs to be called because NOP's never changed the value on the stack.
 
-### OP_CHECKLOCKTIMEVERIFY (OP_HODL)
+### OP_CHECKLOCKTIMEVERIFY 
 
 This allows bitcoins to be marked unspendable _until some point in the future_.
 
@@ -389,16 +388,22 @@ This allows bitcoins to be marked unspendable _until some point in the future_.
  * Lenny, and either Alice or Bob access only after 3 months (should a dispute prevent the contract from being resolved)
  * Depending on which case is desired, a boolean needs to be pushed at the end of the scriptSig, to trigger the IF / ELSE code.
   
-### OP_CHECKSEQUENCEVERIFY
+### OP_CHECKSEQUENCEVERIFY (OP_HODL)
 
 This opcode is a _relative_ locktime, so the transaction is locked until a certain time has passed since
 it confirms in the blockchain.
 
 <pre>
+ "+30d" OP_CHECKSEQUENCEVERIFY OP_DUP OP_HASH160 [hash] OP_EQUALVERIFY OP_CHECKSIG
+</pre>
+
+ This script locks your coins for 30 days. 
+
+<pre>
    IF
       2 [Alice's pubkey] [Bob's pubkey] [Escrow's pubkey] 3 CHECKMULTISIGVERIFY
    ELSE
-      "30d" CHECKSEQUENCEVERIFY DROP
+      "+30d" CHECKSEQUENCEVERIFY DROP
       [Alice's pubkey] CHECKSIGVERIFY
    ENDIF
 </pre>
@@ -406,4 +411,3 @@ it confirms in the blockchain.
 This is a 2-of-3 escrow, with an automatic refund to Alice should 30 days occur. Any other time, any two parties can sign to releasea the funds. 
 
 Packaging this into a pay-to-script-hash address, Alice can make a payment, automatically starting the refund countdown.
-
