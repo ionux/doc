@@ -277,7 +277,7 @@ A transaction redeeming one of these outputs might look like:
 }
 </pre>
 
-This contract allows _any_ 2 of the _3_ participants to produce signatures for a transaction,
+This contract allows _any_ 2 of the 3 participants to produce signatures for a transaction,
 without the participation of the third party. This is analogous to escrow, and has been implemented as such. 
 
 ### Pay to script hash
