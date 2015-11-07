@@ -235,7 +235,7 @@ This opcode requires at least 3 parameters:
  * a list of public keys
  * the number of public keys
  * a list of signatures
- * a null byte - ie, OP_0 - due to a bug. 
+ * a null byte, due to a bug. 
  
  OP_CHECKMULTISIG allows up to 16 public keys.
  
